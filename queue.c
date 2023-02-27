@@ -22,11 +22,35 @@ struct list_head *q_new()
 }
 
 /* Free all storage used by queue */
-void q_free(struct list_head *l) {}
+void q_free(struct list_head *l)
+{
+    if (!l)
+        return;
+
+    // traverse and delete all entries
+    element_t *entry = NULL, *succ = NULL;
+    list_for_each_entry_safe (entry, succ, l, list) {
+        q_release_element(entry);
+    }
+    free(l);
+}
 
 /* Insert an element at head of queue */
 bool q_insert_head(struct list_head *head, char *s)
 {
+    if (!head)
+        return false;
+    element_t *node = malloc(sizeof(element_t));
+    if (!node)
+        return false;
+    node->value = strdup(s);
+    // if the string has a length = 0
+    if (!node->value) {
+        free(node);
+        return false;
+    }
+
+    list_add(&node->list, head);
     return true;
 }
 
