@@ -49,7 +49,6 @@ bool q_insert_head(struct list_head *head, char *s)
         free(node);
         return false;
     }
-
     list_add(&node->list, head);
     return true;
 }
@@ -57,31 +56,89 @@ bool q_insert_head(struct list_head *head, char *s)
 /* Insert an element at tail of queue */
 bool q_insert_tail(struct list_head *head, char *s)
 {
+    if (!head)
+        return false;
+
+    element_t *node = malloc(sizeof(element_t));
+    if (!node)
+        return false;
+    node->value = strdup(s);
+    if (!node->value) {
+        free(node);
+        return false;
+    }
+
+    list_add_tail(&node->list, head);
     return true;
 }
 
 /* Remove an element from head of queue */
 element_t *q_remove_head(struct list_head *head, char *sp, size_t bufsize)
 {
-    return NULL;
+    if (!head || list_empty(head))
+        return NULL;
+
+    // extract the first element and unlink it from the list
+    element_t *first = list_first_entry(head, element_t, list);
+    list_del(head->next);
+
+    // if sp is non-null and an element is removed, copy removed string
+    if (sp) {
+        strncpy(sp, first->value, bufsize - 1);
+        sp[bufsize - 1] = '\0';
+    }
+    return first;
 }
 
 /* Remove an element from tail of queue */
 element_t *q_remove_tail(struct list_head *head, char *sp, size_t bufsize)
 {
-    return NULL;
+    if (!head || list_empty(head))
+        return NULL;
+
+    element_t *last = list_last_entry(head, element_t, list);
+    list_del(head->prev);
+
+    if (sp) {
+        strncpy(sp, last->value, bufsize - 1);
+        sp[bufsize - 1] = '\0';
+    }
+    return last;
 }
 
 /* Return number of elements in queue */
 int q_size(struct list_head *head)
 {
-    return -1;
+    if (!head || list_empty(head))
+        return 0;
+
+    int count = 0;
+    struct list_head *node;
+    list_for_each (node, head)
+        ++count;
+    return count;
 }
 
 /* Delete the middle node in queue */
 bool q_delete_mid(struct list_head *head)
 {
     // https://leetcode.com/problems/delete-the-middle-node-of-a-linked-list/
+    if (!head || list_empty(head))
+        return false;
+
+    // because this is a circular linked list
+    struct list_head *target = head->next, *pre = head->prev;
+    while (target != pre && target != pre->prev) {
+        target = target->next;
+        pre = pre->prev;
+    }
+    // unlinke this node
+    element_t *entry = list_entry(target, element_t, list);
+    list_del(target);
+
+    // delete this entry
+    q_release_element(entry);
+
     return true;
 }
 
@@ -89,6 +146,8 @@ bool q_delete_mid(struct list_head *head)
 bool q_delete_dup(struct list_head *head)
 {
     // https://leetcode.com/problems/remove-duplicates-from-sorted-list-ii/
+    if (!head || list_empty(head))
+        return false;
     return true;
 }
 
