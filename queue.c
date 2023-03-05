@@ -148,6 +148,23 @@ bool q_delete_dup(struct list_head *head)
     // https://leetcode.com/problems/remove-duplicates-from-sorted-list-ii/
     if (!head || list_empty(head))
         return false;
+    struct list_head *node, *safe;
+    bool last = false;  // check if the last one is duplicate
+
+    list_for_each_safe (node, safe, head) {
+        element_t *curr = list_entry(node, element_t, list);
+        // check nodes except for the last to detect duplicates
+        bool isDup = node->next != head &&
+                     !strcmp(curr->value,
+                             list_entry(node->next, element_t, list)->value);
+        // if this one is dup or last one is dup
+        if (isDup || last) {
+            list_del(node);
+            q_release_element(curr);
+        }
+        // record if the prev is dup
+        last = isDup;
+    }
     return true;
 }
 
@@ -174,10 +191,39 @@ void q_reverse(struct list_head *head)
         list_move(node, head);
 }
 
+void reverseKNodes(struct list_head *start, struct list_head *end, int k)
+{
+    // reverse till the kth nodes
+    struct list_head *node, *safe;
+    list_for_each_safe (node, safe, start) {
+        if (--k < 0)
+            break;
+        list_move(node, start);
+    }
+}
+
+void reverseQByK(struct list_head *head, struct list_head *start, int k)
+{
+    int c;
+    struct list_head *curr = start;
+    // got to the kth nodes
+    for (c = 0; c < k && curr != head; c++)
+        curr = curr->next;
+    if (c == k) {
+        struct list_head *tmp = curr->next;
+        reverseKNodes(start, curr, k);
+        reverseQByK(head, tmp->prev, k);
+    }
+}
+
 /* Reverse the nodes of the list k at a time */
 void q_reverseK(struct list_head *head, int k)
 {
     // https://leetcode.com/problems/reverse-nodes-in-k-group/
+    if (!head || list_empty(head) || k < 2)
+        return;
+
+    reverseQByK(head, head, k);
 }
 
 /* Sort elements of queue in ascending order */
