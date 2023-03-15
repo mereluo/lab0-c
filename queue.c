@@ -1,8 +1,8 @@
+#include "queue.h"
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#include "queue.h"
 
 /* Notice: sometimes, Cppcheck would find the potential NULL pointer bugs,
  * but some of them cannot occur. You can suppress them by adding the
@@ -213,8 +213,61 @@ void q_reverseK(struct list_head *head, int k)
         }
     }
 }
+/* Merge two lists together */
+struct list_head *merge(struct list_head *l1, struct list_head *l2)
+{
+    struct list_head *newHead = NULL, **ptr = &newHead, **cur;
+    while (l1 && l2) {
+        if (strcmp(list_entry(l1, element_t, list)->value,
+                   list_entry(l2, element_t, list)->value) >= 0)
+            cur = &l2;
+        else
+            cur = &l1;
+        *ptr = *cur;
+        *cur = (*cur)->next;
+        ptr = &(*ptr)->next;
+    }
+    *ptr = (struct list_head *) ((uintptr_t) l1 | (uintptr_t) l2);
+    return newHead;
+}
+
+/* Divide the linked list to half until it left with one element then merge */
+struct list_head *merge_sort(struct list_head *head)
+{
+    if (!head || list_empty(head))
+        return head;
+    struct list_head *slow = head, *fast = head->next;
+    while (fast && fast->next) {
+        slow = slow->next;
+        fast = fast->next->next;
+    }
+    // unlink
+    fast = slow->next;
+    slow->next = NULL;
+    // divide them further and merge
+    struct list_head *left = merge_sort(head);
+    struct list_head *right = merge_sort(fast);
+    return merge(left, right);
+}
+
 /* Sort elements of queue in ascending order */
-void q_sort(struct list_head *head) {}
+void q_sort(struct list_head *head)
+{
+    if (!head || list_empty(head))
+        return;
+    // unlink
+    head->prev->next = NULL;
+    head->next = merge_sort(head->next);
+    // relink
+    struct list_head *ptr = head;
+    while (ptr->next) {
+        ptr->next->prev = ptr;
+        ptr = ptr->next;
+    }
+    ptr->next = head;
+    head->prev = ptr;
+    return;
+}
 
 /* Remove every node which has a node with a strictly greater value anywhere to
  * the right side of it */
@@ -247,5 +300,24 @@ int q_merge(struct list_head *head)
     // https://leetcode.com/problems/merge-k-sorted-lists/
     if (!head || list_empty(head))
         return 0;
-    return 0;
+    queue_contex_t *first = container_of(head->next, queue_contex_t, chain);
+    // if there's only one list in it
+    if (head->next == head->prev)
+        return first->size;
+
+    // traverse the queue
+    struct list_head *cur = head->next->next;
+    while (cur != head) {
+        queue_contex_t *nextQ = container_of(cur, queue_contex_t, chain);
+        // add nextQ to the beginning of the first
+        list_splice_init(nextQ->q, first->q);
+        nextQ->size = 0;
+        cur = cur->next;
+    }
+
+    q_sort(first->q);
+    first->size = q_size(first->q);
+
+    return first->size;
 }
+
