@@ -33,7 +33,7 @@ uint64_t next_pow2(uint64_t x)
 }
 ```
 
-******************************************Simplified: one `|` can ensure 2 bits turn into 1, so we don’t need to stick with moving 1 bit at a time.** 
+Simplified: one `|` can ensure 2 bits turn into 1, so we don’t need to stick with moving 1 bit at a time.
 
 ```c
 uint64_t next_pow2(uint64_t x)
